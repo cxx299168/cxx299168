@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -14,7 +13,7 @@
 </head>
 <body>
     <h1>样本报价单</h1>
-    <table>
+    <table id="product-table">
         <thead>
             <tr>
                 <th>产品名称</th>
@@ -25,23 +24,33 @@
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>水泥</td>
-                <td>50kg/袋</td>
-                <td>¥25</td>
-                <td>10</td>
-                <td>¥250</td>
-            </tr>
+            <!-- 数据通过 JS 自动渲染 -->
         </tbody>
     </table>
-</body>
-</html>
 
-      render(products);
-    }
+    <script>
+        const products = [
+            { name: '水泥', spec: '50kg/袋', price: 25, quantity: 10 }
+        ];
 
-    // 页面加载时渲染
-    render(products);
-  </script>
+        function render(data) {
+            const tbody = document.querySelector('#product-table tbody');
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.spec}</td>
+                    <td>¥${item.price}</td>
+                    <td>${item.quantity}</td>
+                    <td>¥${item.price * item.quantity}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 页面加载时渲染
+        render(products);
+    </script>
 </body>
 </html>
