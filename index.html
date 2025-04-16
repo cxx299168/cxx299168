@@ -1,56 +1,64 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>样本报价单</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #f4f4f4; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>建材搜索</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 40px; text-align: center; }
+    input { width: 80%; padding: 10px; font-size: 16px; }
+    button { padding: 10px 20px; font-size: 16px; margin-left: 10px; }
+    .result { margin-top: 30px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .item { padding: 10px; border-bottom: 1px solid #ccc; }
+    .item strong { color: #007bff; }
+  </style>
 </head>
 <body>
-    <h1>样本报价单</h1>
-    <table id="product-table">
-        <thead>
-            <tr>
-                <th>产品名称</th>
-                <th>规格</th>
-                <th>单价</th>
-                <th>数量</th>
-                <th>总价</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- 数据通过 JS 自动渲染 -->
-        </tbody>
-    </table>
+  <h1>建材搜索引擎</h1>
+  <input type="text" id="searchInput" placeholder="请输入产品名称、规格、价格等关键词">
+  <button onclick="search()">搜索</button>
 
-    <script>
-        const products = [
-            { name: '水泥', spec: '50kg/袋', price: 25, quantity: 10 }
-        ];
+  <div class="result" id="resultBox"></div>
 
-        function render(data) {
-            const tbody = document.querySelector('#product-table tbody');
-            tbody.innerHTML = '';
-            data.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.name}</td>
-                    <td>${item.spec}</td>
-                    <td>¥${item.price}</td>
-                    <td>${item.quantity}</td>
-                    <td>¥${item.price * item.quantity}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
+  <script>
+    // 示例建材数据（你可以继续增加）
+    const products = [
+      { name: "水泥", spec: "50kg/袋", price: "¥25", desc: "适用于地基施工" },
+      { name: "黄沙", spec: "1吨", price: "¥150", desc: "细沙，适用于抹灰" },
+      { name: "钢筋", spec: "12mm", price: "¥4200/吨", desc: "建筑结构钢筋" },
+    ];
 
-        // 页面加载时渲染
-        render(products);
-    </script>
+    function search() {
+      const keyword = document.getElementById("searchInput").value.trim();
+      const resultBox = document.getElementById("resultBox");
+      resultBox.innerHTML = "";
+
+      if (keyword === "") {
+        resultBox.innerHTML = "<p>请输入搜索关键词。</p>";
+        return;
+      }
+
+      const results = products.filter(item =>
+        item.name.includes(keyword) ||
+        item.spec.includes(keyword) ||
+        item.price.includes(keyword) ||
+        item.desc.includes(keyword)
+      );
+
+      if (results.length === 0) {
+        resultBox.innerHTML = "<p>未找到匹配的产品。</p>";
+        return;
+      }
+
+      results.forEach(item => {
+        resultBox.innerHTML += `
+          <div class="item">
+            <strong>${item.name}</strong>（${item.spec}） - ${item.price}<br>
+            <small>${item.desc}</small>
+          </div>
+        `;
+      });
+    }
+  </script>
 </body>
 </html>
