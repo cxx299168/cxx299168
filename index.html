@@ -1,64 +1,79 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>建材搜索</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>产品搜索系统</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 40px; text-align: center; }
-    input { width: 80%; padding: 10px; font-size: 16px; }
-    button { padding: 10px 20px; font-size: 16px; margin-left: 10px; }
-    .result { margin-top: 30px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; }
+    body { font-family: sans-serif; padding: 20px; }
+    .search-container { display: flex; gap: 10px; }
+    input[type="text"] { flex: 1; padding: 10px; font-size: 16px; }
+    button { padding: 10px 15px; font-size: 16px; }
+    .result { margin-top: 20px; }
     .item { padding: 10px; border-bottom: 1px solid #ccc; }
-    .item strong { color: #007bff; }
   </style>
 </head>
 <body>
-  <h1>建材搜索引擎</h1>
-  <input type="text" id="searchInput" placeholder="请输入产品名称、规格、价格等关键词">
-  <button onclick="search()">搜索</button>
+  <h2>产品搜索</h2>
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="请输入产品名称或关键词" oninput="search()"/>
+    <button onclick="addProduct()">添加</button>
+  </div>
 
   <div class="result" id="resultBox"></div>
 
   <script>
-    // 示例建材数据（你可以继续增加）
-    const products = [
-      { name: "水泥", spec: "50kg/袋", price: "¥25", desc: "适用于地基施工" },
-      { name: "黄沙", spec: "1吨", price: "¥150", desc: "细沙，适用于抹灰" },
-      { name: "钢筋", spec: "12mm", price: "¥4200/吨", desc: "建筑结构钢筋" },
+    let products = [
+      { name: "水泥", spec: "50kg/袋", price: "¥25" },
+      { name: "沙子", spec: "每方", price: "¥80" },
+      { name: "砖块", spec: "红砖", price: "¥0.5" },
+      { name: "钢筋", spec: "12mm", price: "¥5/米" }
     ];
 
-    function search() {
-      const keyword = document.getElementById("searchInput").value.trim();
+    function renderResults(results) {
       const resultBox = document.getElementById("resultBox");
       resultBox.innerHTML = "";
 
-      if (keyword === "") {
-        resultBox.innerHTML = "<p>请输入搜索关键词。</p>";
-        return;
-      }
-
-      const results = products.filter(item =>
-        item.name.includes(keyword) ||
-        item.spec.includes(keyword) ||
-        item.price.includes(keyword) ||
-        item.desc.includes(keyword)
-      );
-
       if (results.length === 0) {
-        resultBox.innerHTML = "<p>未找到匹配的产品。</p>";
-        return;
+        resultBox.innerHTML = "<p>未找到相关产品。</p>";
+      } else {
+        results.forEach(p => {
+          resultBox.innerHTML += `
+            <div class="item">
+              <strong>${p.name}</strong><br/>
+              规格：${p.spec}<br/>
+              单价：${p.price}
+            </div>
+          `;
+        });
       }
-
-      results.forEach(item => {
-        resultBox.innerHTML += `
-          <div class="item">
-            <strong>${item.name}</strong>（${item.spec}） - ${item.price}<br>
-            <small>${item.desc}</small>
-          </div>
-        `;
-      });
     }
+
+    function search() {
+      const keyword = document.getElementById("searchInput").value.trim();
+      const results = products.filter(p =>
+        p.name.includes(keyword) || p.spec.includes(keyword)
+      );
+      renderResults(results);
+    }
+
+    function addProduct() {
+      const name = prompt("请输入产品名称");
+      if (!name) return;
+
+      const spec = prompt("请输入规格（如：50kg/袋）");
+      if (!spec) return;
+
+      const price = prompt("请输入单价（如：¥25）");
+      if (!price) return;
+
+      products.push({ name, spec, price });
+      alert("添加成功！");
+      search(); // 重新触发搜索以显示最新
+    }
+
+    // 初始化渲染
+    search();
   </script>
 </body>
 </html>
