@@ -5,24 +5,47 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>建材搜索系统</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
     .search-bar {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       margin-bottom: 20px;
+      justify-content: center;
     }
     input[type="text"] {
       flex: 1;
       padding: 10px;
       font-size: 16px;
+      max-width: 60%;
     }
     button {
-      padding: 10px 14px;
+      padding: 10px 12px;
       font-size: 16px;
     }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #f0f0f0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 15px;
+      text-align: left;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
     #infoModal {
       display: none;
       position: fixed;
@@ -31,14 +54,25 @@
       width: 90%;
       background: white;
       border: 1px solid #ccc;
-      padding: 20px;
+      padding: 15px;
       box-shadow: 0 0 10px rgba(0,0,0,0.3);
       max-height: 80%;
       overflow-y: auto;
       z-index: 999;
     }
-    #infoModal table { margin-top: 10px; }
-    #infoModal button.close { float: right; background: red; color: white; }
+    #infoModal button.close {
+      float: right;
+      background: red;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      font-size: 14px;
+    }
+    @media (max-width: 480px) {
+      input[type="text"] {
+        max-width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -46,15 +80,15 @@
   <h2>建材产品搜索</h2>
 
   <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="输入关键词搜索产品..." oninput="search()" />
+    <input type="text" id="searchInput" placeholder="请输入关键词..." oninput="search()" />
     <button onclick="addProduct()">添加</button>
     <button onclick="showInfo()">信息库</button>
   </div>
 
-  <table>
+  <table id="resultTable" style="display: none;">
     <thead>
       <tr>
-        <th>名称</th><th>规格</th><th>价格</th><th>操作</th>
+        <th>厂家</th><th>型号</th><th>规格</th><th>单价</th><th>操作</th>
       </tr>
     </thead>
     <tbody id="resultBody"></tbody>
@@ -65,7 +99,7 @@
     <h3>信息库内容</h3>
     <table>
       <thead>
-        <tr><th>名称</th><th>规格</th><th>价格</th><th>操作</th></tr>
+        <tr><th>厂家</th><th>型号</th><th>规格</th><th>单价</th><th>操作</th></tr>
       </thead>
       <tbody id="infoBody"></tbody>
     </table>
@@ -75,39 +109,50 @@
     let products = JSON.parse(localStorage.getItem("products") || "[]");
 
     function render(list) {
+      const table = document.getElementById("resultTable");
       const tbody = document.getElementById("resultBody");
       tbody.innerHTML = "";
-      list.forEach((p, i) => {
-        tbody.innerHTML += `
-          <tr>
-            <td>${p.name}</td>
-            <td>${p.spec}</td>
-            <td>${p.price}</td>
-            <td><button onclick="delProduct(${i})">删除</button></td>
-          </tr>`;
-      });
+
+      if (list.length > 0) {
+        table.style.display = "table";
+        list.forEach((p, i) => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${p.factory}</td>
+              <td>${p.model}</td>
+              <td>${p.spec}</td>
+              <td>${p.price}</td>
+              <td><button onclick="delProduct(${i})">删除</button></td>
+            </tr>`;
+        });
+      } else {
+        table.style.display = "none";
+      }
     }
 
     function search() {
       const keyword = document.getElementById("searchInput").value.trim();
       const filtered = products.filter(p =>
-        p.name.includes(keyword) || p.spec.includes(keyword)
+        p.factory.includes(keyword) || p.model.includes(keyword) || p.spec.includes(keyword)
       );
       render(filtered);
     }
 
     function addProduct() {
-      const name = prompt("产品名称：");
-      if (!name) return;
+      const factory = prompt("厂家：");
+      if (!factory) return;
+      const model = prompt("型号：");
+      if (!model) return;
       const spec = prompt("规格：");
-      const price = prompt("价格：");
-      products.push({ name, spec, price });
+      if (!spec) return;
+      const price = prompt("单价：");
+      products.push({ factory, model, spec, price });
       localStorage.setItem("products", JSON.stringify(products));
       search();
     }
 
     function delProduct(index) {
-      if (confirm("确定要删除该产品吗？")) {
+      if (confirm("确定要删除该项吗？")) {
         products.splice(index, 1);
         localStorage.setItem("products", JSON.stringify(products));
         search();
@@ -124,7 +169,8 @@
       products.forEach((p, i) => {
         tbody.innerHTML += `
           <tr>
-            <td>${p.name}</td>
+            <td>${p.factory}</td>
+            <td>${p.model}</td>
             <td>${p.spec}</td>
             <td>${p.price}</td>
             <td><button onclick="delProduct(${i})">删除</button></td>
