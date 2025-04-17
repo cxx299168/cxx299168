@@ -149,13 +149,14 @@
   <script>
     let products = JSON.parse(localStorage.getItem("products") || "[]");
     let currentIndex = null;
+    let forceShowInfo = false;
 
     function render(list) {
       const tbody = document.getElementById("resultBody");
       tbody.innerHTML = "";
       list.forEach((p, i) => {
         tbody.innerHTML += `
-          <tr onclick="openDetail(${i})">
+          <tr onclick="handleRowClick(${i})">
             <td>${p.factory}</td>
             <td>${p.model}</td>
             <td>${p.spec}</td>
@@ -165,11 +166,13 @@
       });
     }
 
-    function search() {
+    function search(forceAll = false) {
       const keyword = document.getElementById("searchInput").value.trim();
-      const filtered = products.filter(p =>
-        p.factory.includes(keyword) || p.model.includes(keyword) || p.spec.includes(keyword)
-      );
+      const filtered = forceAll || forceShowInfo || keyword === ""
+        ? products
+        : products.filter(p =>
+            p.factory.includes(keyword) || p.model.includes(keyword) || p.spec.includes(keyword)
+          );
       render(filtered);
     }
 
@@ -181,19 +184,26 @@
       const price = prompt("单价：");
       products.push({ factory, model, spec, price, factoryInfo: "", materialInfo: "" });
       localStorage.setItem("products", JSON.stringify(products));
-      search();
+      search(true); // 添加后自动显示全部信息
     }
 
     function delProduct(index) {
       if (confirm("确定要删除该产品吗？")) {
         products.splice(index, 1);
         localStorage.setItem("products", JSON.stringify(products));
-        search();
+        search(true);
       }
     }
 
     function showInfo() {
-      search();
+      forceShowInfo = true;
+      search(true);
+    }
+
+    function handleRowClick(index) {
+      forceShowInfo = true;
+      openDetail(index);
+      search(true);
     }
 
     function openDetail(index) {
@@ -223,7 +233,7 @@
     }
 
     // 初始化加载
-    search();
+    search(true);
   </script>
 </body>
 </html>
