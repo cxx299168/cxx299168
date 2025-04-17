@@ -5,31 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>建材搜索系统</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: #f9f9f9;
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 20px;
-    }
+    body { font-family: sans-serif; margin: 0; padding: 10px; }
     .search-bar {
       display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-      justify-content: center;
+      gap: 10px;
+      margin: 20px auto;
+      max-width: 500px;
     }
     input[type="text"] {
       flex: 1;
       padding: 10px;
       font-size: 16px;
-      max-width: 60%;
     }
     button {
-      padding: 10px 12px;
+      padding: 10px 14px;
       font-size: 16px;
     }
     table {
@@ -40,52 +29,57 @@
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
-      font-size: 15px;
       text-align: left;
     }
-    th {
-      background-color: #f0f0f0;
-    }
-    #infoModal {
+    th { background-color: #f0f0f0; }
+
+    #infoModal, #detailModal {
       display: none;
       position: fixed;
-      top: 10%;
+      top: 5%;
       left: 5%;
       width: 90%;
       background: white;
       border: 1px solid #ccc;
-      padding: 15px;
+      padding: 20px;
       box-shadow: 0 0 10px rgba(0,0,0,0.3);
-      max-height: 80%;
+      max-height: 90%;
       overflow-y: auto;
       z-index: 999;
     }
-    #infoModal button.close {
+    #infoModal table, #detailModal textarea {
+      width: 100%;
+      margin-top: 10px;
+    }
+    #infoModal button.close,
+    #detailModal button.close {
       float: right;
       background: red;
       color: white;
-      border: none;
-      padding: 6px 10px;
-      font-size: 14px;
+      margin-left: 10px;
     }
-    @media (max-width: 480px) {
-      input[type="text"] {
-        max-width: 100%;
-      }
+    .center {
+      text-align: center;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      font-size: 16px;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
 
-  <h2>建材产品搜索</h2>
+  <h2 class="center">建材产品搜索</h2>
 
   <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="请输入关键词..." oninput="search()" />
+    <input type="text" id="searchInput" placeholder="输入关键词搜索产品..." oninput="search()" />
     <button onclick="addProduct()">添加</button>
     <button onclick="showInfo()">信息库</button>
   </div>
 
-  <table id="resultTable" style="display: none;">
+  <table id="productTable" style="display:none;">
     <thead>
       <tr>
         <th>厂家</th><th>型号</th><th>规格</th><th>单价</th><th>操作</th>
@@ -105,29 +99,40 @@
     </table>
   </div>
 
+  <div id="detailModal">
+    <button class="close" onclick="hideDetail()">关闭</button>
+    <h3 id="detailTitle">产品详情</h3>
+    <label>厂家详细信息：</label>
+    <textarea id="factoryDetail"></textarea>
+    <label>产品材质介绍：</label>
+    <textarea id="materialDetail"></textarea>
+    <button onclick="saveDetail()">保存</button>
+  </div>
+
   <script>
     let products = JSON.parse(localStorage.getItem("products") || "[]");
+    let details = JSON.parse(localStorage.getItem("details") || "{}");
+    let currentIndex = -1;
 
     function render(list) {
-      const table = document.getElementById("resultTable");
+      const table = document.getElementById("productTable");
       const tbody = document.getElementById("resultBody");
       tbody.innerHTML = "";
-
-      if (list.length > 0) {
-        table.style.display = "table";
-        list.forEach((p, i) => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${p.factory}</td>
-              <td>${p.model}</td>
-              <td>${p.spec}</td>
-              <td>${p.price}</td>
-              <td><button onclick="delProduct(${i})">删除</button></td>
-            </tr>`;
-        });
-      } else {
+      if (list.length === 0) {
         table.style.display = "none";
+        return;
       }
+      table.style.display = "table";
+      list.forEach((p, i) => {
+        tbody.innerHTML += `
+          <tr onclick="openDetail(${i})">
+            <td>${p.factory}</td>
+            <td>${p.model}</td>
+            <td>${p.spec}</td>
+            <td>${p.price}</td>
+            <td><button onclick="event.stopPropagation();delProduct(${i})">删除</button></td>
+          </tr>`;
+      });
     }
 
     function search() {
@@ -142,9 +147,7 @@
       const factory = prompt("厂家：");
       if (!factory) return;
       const model = prompt("型号：");
-      if (!model) return;
       const spec = prompt("规格：");
-      if (!spec) return;
       const price = prompt("单价：");
       products.push({ factory, model, spec, price });
       localStorage.setItem("products", JSON.stringify(products));
@@ -152,13 +155,11 @@
     }
 
     function delProduct(index) {
-      if (confirm("确定要删除该项吗？")) {
+      if (confirm("确定要删除该产品吗？")) {
         products.splice(index, 1);
         localStorage.setItem("products", JSON.stringify(products));
         search();
-        if (document.getElementById("infoModal").style.display === "block") {
-          showInfo();
-        }
+        showInfo();
       }
     }
 
@@ -182,7 +183,34 @@
       document.getElementById("infoModal").style.display = "none";
     }
 
-    // 页面初始化
+    function openDetail(index) {
+      currentIndex = index;
+      const key = "detail_" + index;
+      const product = products[index];
+      const detail = details[key] || { factoryDetail: "", materialDetail: "" };
+      document.getElementById("detailTitle").textContent = `${product.factory} - ${product.model} - 详情`;
+      document.getElementById("factoryDetail").value = detail.factoryDetail;
+      document.getElementById("materialDetail").value = detail.materialDetail;
+      document.getElementById("detailModal").style.display = "block";
+    }
+
+    function saveDetail() {
+      if (currentIndex === -1) return;
+      const key = "detail_" + currentIndex;
+      details[key] = {
+        factoryDetail: document.getElementById("factoryDetail").value,
+        materialDetail: document.getElementById("materialDetail").value
+      };
+      localStorage.setItem("details", JSON.stringify(details));
+      alert("已保存");
+      hideDetail();
+    }
+
+    function hideDetail() {
+      document.getElementById("detailModal").style.display = "none";
+    }
+
+    // 初始化
     search();
   </script>
 
