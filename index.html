@@ -1,52 +1,229 @@
-#detailModal {
-  display: none;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 90%;
-  max-width: 400px;
-  transform: translate(-50%, -50%);
-  background: white;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  padding: 20px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  z-index: 999;
-}
-#detailModal textarea {
-  width: 100%;
-  height: 80px;
-  font-size: 14px;
-  margin-top: 8px;
-  resize: vertical;
-  box-sizing: border-box;
-}
-#detailModal h3 {
-  font-size: 18px;
-  margin-bottom: 10px;
-  text-align: center;
-}
-#detailModal label {
-  font-weight: bold;
-  display: block;
-  margin-top: 12px;
-}
-#detailModal button.close {
-  float: right;
-  background: #d9534f;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  font-size: 14px;
-  border-radius: 5px;
-}
-#detailModal button {
-  margin-top: 15px;
-  width: 100%;
-  padding: 10px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  font-size: 16px;
-  border-radius: 5px;
-}
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>建材搜索系统</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 10px;
+      margin: 0;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 20px;
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      margin: 20px auto;
+      max-width: 500px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #f0f0f0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    tr:hover {
+      background-color: #f9f9f9;
+      cursor: pointer;
+    }
+
+    #detailModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 90%;
+      max-width: 360px;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 1px solid #ccc;
+      padding: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      z-index: 1000;
+      border-radius: 10px;
+    }
+
+    #detailModal textarea {
+      width: 100%;
+      height: 80px;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+
+    #detailModal h3 {
+      margin-top: 0;
+    }
+
+    #detailModal .modal-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    #detailModal button {
+      flex: 1;
+      margin: 0 5px;
+      color: white;
+    }
+
+    #detailModal button.save {
+      background-color: #007bff;
+    }
+
+    #detailModal button.add {
+      background-color: #28a745;
+    }
+
+    #detailModal button.close {
+      background-color: red;
+      color: white;
+      float: right;
+      padding: 6px 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>建材产品搜索</h2>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="输入关键词搜索..." oninput="search()">
+    <button onclick="addProduct()">添加</button>
+    <button onclick="showInfo()">信息库</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>厂家</th><th>型号</th><th>规格</th><th>单价</th><th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="resultBody"></tbody>
+  </table>
+
+  <div id="detailModal">
+    <button class="close" onclick="hideDetail()">关闭</button>
+    <h3 id="detailTitle">产品详情</h3>
+    <label>厂家详细信息：</label>
+    <textarea id="detailFactoryInfo"></textarea>
+    <label>产品材质介绍：</label>
+    <textarea id="detailMaterialInfo"></textarea>
+    <div class="modal-actions">
+      <button class="save" onclick="saveDetail()">保存</button>
+      <button class="add" onclick="addDetail()">添加信息</button>
+    </div>
+  </div>
+
+  <script>
+    let products = JSON.parse(localStorage.getItem("products") || "[]");
+    let currentIndex = null;
+
+    function render(list) {
+      const tbody = document.getElementById("resultBody");
+      tbody.innerHTML = "";
+      list.forEach((p, i) => {
+        tbody.innerHTML += `
+          <tr onclick="openDetail(${i})">
+            <td>${p.factory}</td>
+            <td>${p.model}</td>
+            <td>${p.spec}</td>
+            <td>${p.price}</td>
+            <td><button onclick="event.stopPropagation(); delProduct(${i})">删除</button></td>
+          </tr>`;
+      });
+    }
+
+    function search() {
+      const keyword = document.getElementById("searchInput").value.trim();
+      const filtered = products.filter(p =>
+        p.factory.includes(keyword) || p.model.includes(keyword) || p.spec.includes(keyword)
+      );
+      render(filtered);
+    }
+
+    function addProduct() {
+      const factory = prompt("厂家：");
+      if (!factory) return;
+      const model = prompt("型号：");
+      const spec = prompt("规格：");
+      const price = prompt("单价：");
+      products.push({ factory, model, spec, price, factoryInfo: "", materialInfo: "" });
+      localStorage.setItem("products", JSON.stringify(products));
+      search();
+    }
+
+    function delProduct(index) {
+      if (confirm("确定要删除该产品吗？")) {
+        products.splice(index, 1);
+        localStorage.setItem("products", JSON.stringify(products));
+        search();
+      }
+    }
+
+    function showInfo() {
+      search();
+    }
+
+    function openDetail(index) {
+      currentIndex = index;
+      const p = products[index];
+      document.getElementById("detailTitle").innerText = `${p.factory} - ${p.model} 详情`;
+      document.getElementById("detailFactoryInfo").value = p.factoryInfo || "";
+      document.getElementById("detailMaterialInfo").value = p.materialInfo || "";
+      document.getElementById("detailModal").style.display = "block";
+    }
+
+    function hideDetail() {
+      document.getElementById("detailModal").style.display = "none";
+    }
+
+    function saveDetail() {
+      if (currentIndex !== null) {
+        products[currentIndex].factoryInfo = document.getElementById("detailFactoryInfo").value;
+        products[currentIndex].materialInfo = document.getElementById("detailMaterialInfo").value;
+        localStorage.setItem("products", JSON.stringify(products));
+        alert("信息已保存！");
+      }
+    }
+
+    function addDetail() {
+      alert("你可以填写新的备注信息，保存后下次会显示在这里。");
+    }
+
+    // 初始化加载
+    search();
+  </script>
+</body>
+</html>
